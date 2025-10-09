@@ -115,7 +115,106 @@ class StockAPI:
                 import time
                 time.sleep(12)  # Wait 12 seconds between calls
 
+        # If no quotes were fetched, return mock data
+        if not quotes:
+            return self.get_mock_quotes(symbols)
+
         return quotes
+
+    def get_most_active_stocks(self):
+        """Get list of most active/popular stocks"""
+        # Return a curated list of most actively traded stocks
+        most_active = [
+            'AAPL',  # Apple
+            'MSFT',  # Microsoft
+            'NVDA',  # NVIDIA
+            'GOOGL', # Alphabet
+            'AMZN',  # Amazon
+            'TSLA',  # Tesla
+            'META',  # Meta (Facebook)
+            'AMD',   # Advanced Micro Devices
+            'NFLX',  # Netflix
+            'ADBE'   # Adobe
+        ]
+
+        return self.get_multiple_quotes(most_active)
+
+    def get_popular_etfs(self):
+        """Get list of popular ETFs"""
+        # Return quotes for popular ETFs
+        popular_etfs = [
+            'SPY',   # SPDR S&P 500 ETF
+            'QQQ',   # Invesco QQQ ETF (Nasdaq-100)
+            'VTI',   # Vanguard Total Stock Market ETF
+            'IWM',   # iShares Russell 2000 ETF
+            'EFA',   # iShares MSCI EAFE ETF
+            'GLD',   # SPDR Gold Shares
+            'TLT',   # iShares 20+ Year Treasury Bond ETF
+            'XLF',   # Financial Select Sector SPDR
+            'XLK',   # Technology Select Sector SPDR
+            'XLE'    # Energy Select Sector SPDR
+        ]
+
+        return self.get_multiple_quotes(popular_etfs)
+
+    def get_mock_quotes(self, symbols):
+        """Generate mock stock data when API is unavailable"""
+        import random
+        mock_data = {}
+
+        # Predefined realistic stock prices
+        stock_prices = {
+            'AAPL': 178.50, 'MSFT': 380.25, 'NVDA': 495.75, 'GOOGL': 142.80,
+            'AMZN': 155.60, 'TSLA': 245.30, 'META': 485.90, 'AMD': 145.20,
+            'NFLX': 445.60, 'ADBE': 575.80, 'SPY': 455.30, 'QQQ': 395.40,
+            'VTI': 235.75, 'IWM': 195.60, 'EFA': 72.45, 'GLD': 185.90,
+            'TLT': 92.35, 'XLF': 38.75, 'XLK': 185.40, 'XLE': 88.25
+        }
+
+        for symbol in symbols:
+            base_price = stock_prices.get(symbol, 150.00)
+            # Add some random variation (-2% to +2%)
+            variation = random.uniform(-0.02, 0.02)
+            current_price = base_price * (1 + variation)
+
+            # Generate change and change_percent
+            change = current_price * random.uniform(-0.015, 0.015)
+            change_percent = (change / current_price) * 100
+
+            mock_data[symbol] = {
+                'symbol': symbol,
+                'price': round(current_price, 2),
+                'change': round(change, 2),
+                'change_percent': round(change_percent, 2),
+                'volume': random.randint(20000000, 150000000),
+                'latest_trading_day': 'Mock Data',
+                'is_up': change >= 0
+            }
+
+        return mock_data
+
+    def get_stock_chart_url(self, symbol, timeframe='1D'):
+        """Generate chart URL for stock visualization"""
+        # Using TradingView widget URL (free charting service)
+        base_url = "https://s.tradingview.com/widgetembed/"
+        params = {
+            'frameElementId': f'tradingview_{symbol}',
+            'symbol': symbol,
+            'interval': timeframe,
+            'hidesidetoolbar': '1',
+            'hidetabs': '1',
+            'saveimage': '0',
+            'toolbarbg': 'F1F3F6',
+            'studies': [],
+            'locale': 'en',
+            'utm_source': 'localhost',
+            'utm_medium': 'widget_new',
+            'utm_campaign': 'chart'
+        }
+
+        # Create simplified chart URL
+        chart_url = f"https://finance.yahoo.com/chart/{symbol}"
+        return chart_url
 
 
 # Test

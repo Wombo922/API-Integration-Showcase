@@ -76,8 +76,11 @@ class Dashboard:
         dashboard_data = {
             'generated_at': datetime.now().isoformat(),
             'weather': None,
+            'forecast': None,
+            'hourly': None,
             'news': None,
             'stocks': {},
+            'etfs': {},
             'quote': None,
             'twitter': None,
             'reddit': None
@@ -88,25 +91,37 @@ class Dashboard:
             print("  - Getting weather...")
             return ('weather', self.weather.get_current_weather("Chicago"))
 
+        def fetch_forecast():
+            print("  - Getting 7-day forecast...")
+            return ('forecast', self.weather.get_7day_forecast("Chicago"))
+
+        def fetch_hourly():
+            print("  - Getting hourly forecast...")
+            return ('hourly', self.weather.get_hourly_forecast("Chicago", 24))
+
         def fetch_news():
             print(f"  - Getting {news_category} news...")
             return ('news', self.news.get_top_headlines(category=news_category, num_articles=5))
 
-        def fetch_stock(symbol):
-            quote = self.stocks.get_quote(symbol)
-            return (symbol, quote)
+        def fetch_most_active_stocks():
+            print("  - Getting most active stocks...")
+            return ('stocks', self.stocks.get_most_active_stocks())
+
+        def fetch_popular_etfs():
+            print("  - Getting popular ETFs...")
+            return ('etfs', self.stocks.get_popular_etfs())
 
         def fetch_quote():
             print("  - Getting quote...")
             return ('quote', self.quotes.get_random_quote())
 
         def fetch_twitter():
-            print("  - Getting Twitter trends...")
-            return ('twitter', self.twitter.get_trending_topics(num_topics=3))
+            print(f"  - Getting {news_category} tweets...")
+            return ('twitter', self.twitter.get_tweets_by_category(category=news_category, num_tweets=3))
 
         def fetch_reddit():
-            print("  - Getting Reddit posts...")
-            return ('reddit', self.reddit.get_trending_posts(subreddit_name='technology', num_posts=3))
+            print(f"  - Getting {news_category} Reddit posts...")
+            return ('reddit', self.reddit.get_trending_posts(subreddit_name='technology', num_posts=3, category=news_category))
 
         # Fetch all data in parallel using ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=8) as executor:
@@ -114,14 +129,14 @@ class Dashboard:
 
             # Submit all API calls
             futures.append(executor.submit(fetch_weather))
+            futures.append(executor.submit(fetch_forecast))
+            futures.append(executor.submit(fetch_hourly))
             futures.append(executor.submit(fetch_news))
             futures.append(executor.submit(fetch_quote))
             futures.append(executor.submit(fetch_twitter))
             futures.append(executor.submit(fetch_reddit))
-
-            # Submit stock fetches
-            stock_symbols = ['AAPL', 'MSFT']  # Reduced to 2 for faster loading
-            stock_futures = [executor.submit(fetch_stock, symbol) for symbol in stock_symbols]
+            futures.append(executor.submit(fetch_most_active_stocks))
+            futures.append(executor.submit(fetch_popular_etfs))
 
             # Collect results as they complete
             for future in as_completed(futures):
@@ -130,15 +145,6 @@ class Dashboard:
                     dashboard_data[key] = value
                 except Exception as e:
                     print(f"Error fetching data: {str(e)}")
-
-            # Collect stock results
-            for future in as_completed(stock_futures):
-                try:
-                    symbol, quote = future.result()
-                    if quote:
-                        dashboard_data['stocks'][symbol] = quote
-                except Exception as e:
-                    print(f"Error fetching stock: {str(e)}")
 
         print("All data fetched!")
 
